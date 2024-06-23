@@ -33,6 +33,7 @@ function voiceflow_transcripts_page() {
 
     // Execute the cURL session and fetch the response
     $response = curl_exec($ch);
+    //var_dump($response);
 
     // Close the cURL session
     curl_close($ch);
@@ -48,13 +49,46 @@ function voiceflow_transcripts_page() {
     
 
     // Populate the session list
+    
+    
+   
     foreach ($transcripts as $transcript) {
-        $broswer = $transcript['browser'];
-        
+        $browser = $transcript['browser'];
+        $createdAt = $transcript['createdAt'];
+        $formattedDate = date('g:i a, M j', strtotime($createdAt));
+        $tags = $transcript['reportTags'];
 
-        echo '<div class="user"><p><strong>User</strong><br>ID:<a href="#" class="session-link" data-session-id="' . $transcript['_id'] . '">' . $transcript['sessionID'] . '</a><br>1:06 pm, Jun 18</p>
-        <span class="checkmark">✔</span></div>';
+       
+        // Initialize an empty array to store the tags
+     
+        $tagsArray = array();
+
+        foreach ($transcripts as $transcript) {
+            // Save the sessionId and reportTags in the array
+            $tagsArray[] = array(
+                'sessionId' => $transcript['sessionID'],
+                'reportTags' => $transcript['reportTags']
+            );
+        }
+        
+        var_dump($tagsArray);
+
+
+        echo '<div class="user"><p><strong>User</strong><br>ID:<a href="#" class="session-link" data-session-id="' . $transcript['_id'] . '">' . $transcript['sessionID'] . '</a>';
+
+        if (in_array('system.reviewed', $transcript['reportTags'])) {
+            echo '<span class="checkmark">✔</span>';
+        }
+
+        if (in_array('system.saved', $transcript['reportTags'])) {
+            echo '<span class="bookmark">🔖</span>';
+        }
+        echo '<br>' . $formattedDate . '</p></div>';
+        
     }
+    
+   
+    
   
    echo '</div>
    <div class="main">
@@ -71,34 +105,49 @@ function voiceflow_transcripts_page() {
            <li>Save for Later</li>
            <li>Delete</li>
        </ul>
-       <div class="tags">
-           <h3>Tags</h3>
-           <div class="textbox">
-               <span class="tag">Reviewed</span>
-           </div>
-       </div>
+    <div class="tags">
+        <h3>Tags</h3>
+        <div class="textbox">
+                    <span class="tag">Reviewed</span>
+                </div>
+    </div>
        <div class="notes">
            <h3>Notes</h3>
            <p>Leave notes or @mention</p>
        </div>
    </div>
 </div>';
+
+
     
-  
+
 
     // Add JavaScript to handle session clicks and fetch the transcript data
+   
     ?>
+    
   
-  <script>
+    <script>
+
+
+
+
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.session-link').forEach(function(link) {
             link.addEventListener('click', function(event) {
                 event.preventDefault();
                 const sessionId = this.getAttribute('data-session-id');
                 fetchTranscript(sessionId);
+
+               
+
+            
+       
             });
         });
     });
+
+    
 
     function fetchTranscript(sessionId) {
         const apiEndpoint = '<?php echo "https://api.voiceflow.com/v2/transcripts/{$project_id}/"; ?>' + sessionId;
@@ -112,28 +161,57 @@ function voiceflow_transcripts_page() {
         .then(data => {
             console.log(data); // Log the data to inspect its structure
             const container = document.getElementById('transcriptContainer');
-            //container.innerHTML = ''; // Clear previous transcript
+            container.innerHTML = ''; // Clear previous transcript
 
             data.forEach(entry => {
-                let messageDiv = document.createElement('div');
-                messageDiv.classList.add('message', 'user-message');
-                
-                if (entry.type === 'text' && entry.payload.message) {
-                    messageDiv.classList.add('text');
-                    messageDiv.innerHTML = '<img src="path/to/user-icon.png" alt="User Icon"><p>' + entry.payload.message + '</p>';
-                } else if (entry.type === 'request' && entry.payload.label) {
-                    messageDiv.classList.add('request');
-                    messageDiv.innerHTML = '<img src="path/to/assistant-icon.png" alt="Assistant Icon"><p>' + entry.payload.label + '</p>';
-                }
+                console.log(entry); // Log each entry to inspect its structure
+                if (entry.type === 'text' || entry.type === 'request') {
+                    let messageDiv = document.createElement('div');
+                    
+                    if (entry.type === 'text' && entry.payload.type === 'text' && entry.payload.payload && entry.payload.payload.message) {
+                        const messageContent = entry.payload.payload.message.split('\n').map(paragraph => `<p>${paragraph}</p>`).join('');
+                        messageDiv.classList.add('message', 'user-message');
+                        messageDiv.innerHTML = `
+                            <div class="message-header">
+                                <span class="message-time">${new Date(entry.startTime).toLocaleTimeString()}</span>
+                            </div>
+                            <div class="message-body">
+                                ${messageContent}
+                            </div>
+                        `;
+                        container.appendChild(messageDiv);
+                    } else if (entry.type === 'request' && entry.payload.type && entry.payload.payload && entry.payload.payload.label) {
+                        let messageContainerDiv = document.createElement('div');
+                        messageContainerDiv.classList.add('message-container');
 
-                container.appendChild(messageDiv);
+                        const messageContent = entry.payload.payload.label.split('\n').map(paragraph => `<p>${paragraph}</p>`).join('');
+                        messageDiv.classList.add('message', 'ai-message');
+                        messageDiv.innerHTML = `
+                            <div class="message-header">
+                                <span class="message-time">${new Date(entry.startTime).toLocaleTimeString()}</span>
+                            </div>
+                            <div class="message-body-request">
+                                ${messageContent}
+                            </div>
+                        `;
+
+                        messageContainerDiv.appendChild(messageDiv);
+                        container.appendChild(messageContainerDiv);
+                    }
+                }
             });
         })
         .catch(error => console.error('Error fetching transcript:', error));
     }
 </script>
 
+
+
+
+
+
     <?php
+
 }
 ?>
 
