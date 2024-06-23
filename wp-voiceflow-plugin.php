@@ -20,6 +20,13 @@ require_once VOICEFLOW_PLUGIN_PATH . 'includes/admin/settings.php';
 require_once VOICEFLOW_PLUGIN_PATH . 'includes/enqueue-scripts.php';
 require_once VOICEFLOW_PLUGIN_PATH . 'includes/wp-voiceflow-view-transcripts.php';
 
+
+
+
+
+
+
+
 //require_once plugin_dir_path( __FILE__ ) . 'includes/admin/wp-voiceflow-view-transcripts.php';
 
 
@@ -48,8 +55,8 @@ function voiceflow_add_admin_menu() {
     );
 
     // Register a setting for our options.
-    register_setting( 'voiceflow', 'voiceflow_options' );
-    register_setting( 'voiceflow', 'voiceflow_include_content' );
+   register_setting( 'voiceflow', 'voiceflow_options' );
+   register_setting( 'voiceflow', 'voiceflow_include_content' );
 
     // Add a section to the settings page.
     add_settings_section(

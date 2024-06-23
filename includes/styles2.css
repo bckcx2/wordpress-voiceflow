@@ -1,0 +1,131 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 25%;
+    background-color: #f4f4f4;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+}
+
+.user {
+    margin-bottom: 20px;
+}
+
+.user p {
+    margin: 0;
+}
+
+.checkmark {
+    color: rgb(128, 0, 11);
+    font-size: 18px;
+}
+
+.main {
+    width: 50%;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.transcript-header h2 {
+    margin-top: 0;
+}
+
+.conversation {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 8px;
+   
+}
+.message-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.message {
+    margin-bottom: 20px;
+}
+
+.user-message {
+    background-color: #dbe1e3;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+
+
+.ai-message {
+    display: inline-block;
+    background-color: #2d67ef;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.ai-message p {
+    text-align: right;
+    color: white;
+}
+
+.actions {
+    width: 25%;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-left: 1px solid #ccc;
+}
+
+.actions h2 {
+    margin-top: 0;
+}
+
+.actions ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.actions ul li {
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.actions ul li .checkmark {
+    color: green;
+    font-size: 18px;
+}
+
+.tags {
+    margin-top: 20px;
+}
+
+.tag {
+    background-color: #e0e0e0;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.notes {
+    margin-top: 20px;
+}
+
+.notes p {
+    margin: 0;
+    color: #999;
+}
+
+.textbox {
+    border: 1px solid #ccc;
+    padding: 10px;
+    
+}
