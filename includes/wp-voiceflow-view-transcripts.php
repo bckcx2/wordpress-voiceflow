@@ -1,4 +1,25 @@
 <?php
+
+
+if (!empty($_POST)) {
+    // Form has been submitted
+    $transcripts = json_decode($response, true);
+    $firstTranscript = $transcripts[0];
+
+    // Do something with $firstTranscript
+    // For example, display it:
+    echo '<pre>';
+    print_r($firstTranscript);
+    echo '</pre>';
+} else {
+    // Form has not been submitted, display the form
+    ?>
+    <form method="post">
+        <input type="submit" value="Load first transcript">
+    </form>
+    <?php
+}
+
 // File: wp-voiceflow-view-transcripts.php
 function my_plugin_admin_enqueue_styles() {
     wp_enqueue_style('my-plugin-admin-style', plugin_dir_url(__FILE__) . 'styles2.css');
@@ -51,36 +72,45 @@ function voiceflow_transcripts_page() {
     // Populate the session list
     
     
-   
+    $tagsArray = array();
     foreach ($transcripts as $transcript) {
         $browser = $transcript['browser'];
         $createdAt = $transcript['createdAt'];
+        //$transcriptId = $transcript['_id'];
+        $reviewed = false;
+
+        //$tagsArray = array();
+        // Save the sessionId and reportTags in the array
+        $tagsArray[] = array(
+            'sessionId' => $transcript['_id'],
+            'reportTags' => $transcript['reportTags']
+        );
+      
+        
+
+            if (in_array('system.reviewed', $transcript['reportTags'])) {
+                $reviewed = true;
+            }
+        $saved = false;
+
+            if (in_array('system.saved', $transcript['reportTags'])) {
+                $saved = true;
+            }
         $formattedDate = date('g:i a, M j', strtotime($createdAt));
         $tags = $transcript['reportTags'];
 
        
-        // Initialize an empty array to store the tags
-     
-        $tagsArray = array();
-
-        foreach ($transcripts as $transcript) {
-            // Save the sessionId and reportTags in the array
-            $tagsArray[] = array(
-                'sessionId' => $transcript['sessionID'],
-                'reportTags' => $transcript['reportTags']
-            );
-        }
-        
-        var_dump($tagsArray);
 
 
         echo '<div class="user"><p><strong>User</strong><br>ID:<a href="#" class="session-link" data-session-id="' . $transcript['_id'] . '">' . $transcript['sessionID'] . '</a>';
 
-        if (in_array('system.reviewed', $transcript['reportTags'])) {
+       
+        if ($reviewed) {
             echo '<span class="checkmark">✔</span>';
         }
+        
 
-        if (in_array('system.saved', $transcript['reportTags'])) {
+        if ($saved) {
             echo '<span class="bookmark">🔖</span>';
         }
         echo '<br>' . $formattedDate . '</p></div>';
@@ -88,7 +118,7 @@ function voiceflow_transcripts_page() {
     }
     
    
-    
+echo $transcriptId;
   
    echo '</div>
    <div class="main">
@@ -100,15 +130,15 @@ function voiceflow_transcripts_page() {
    </div>
    <div class="actions">
        <h2>Actions</h2>
-       <ul>
-           <li>Mark as Reviewed ✔</li>
-           <li>Save for Later</li>
-           <li>Delete</li>
-       </ul>
+    <ul>
+        <li><button type="button" onclick="markAsReviewed('.$transcriptId.')">Mark as Reviewed ✔</button></li>
+        <li><button type="button">Save for Later</button></li>
+        <li><button type="button">Delete</button></li>
+    </ul>
     <div class="tags">
         <h3>Tags</h3>
-        <div class="textbox">
-                    <span class="tag">Reviewed</span>
+        <div id="reportTagsList" class="textbox">
+                   
                 </div>
     </div>
        <div class="notes">
@@ -122,34 +152,78 @@ function voiceflow_transcripts_page() {
     
 
 
-    // Add JavaScript to handle session clicks and fetch the transcript data
-   
+    
+
+    
+    
+
     ?>
     
-  
-    <script>
+
+    
+    
+<script>
+
+function markAsReviewed($transcriptId) {
+    // Your code here
+    console.log('The button was clicked.');
+    
+
+     const apiEndpoint = '<?php echo "https://api.voiceflow.com/v2/transcripts/{$project_id}/$sessionId/report_tag/system.reviewed/"; ?>'
+        PUT(apiEndpoint, {
+            headers: {
+                'Authorization': '<?php echo $authToken; ?>',
+                'Accept': 'application/json'
+            }
+        })
+} 
 
 
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.session-link').forEach(function(link) {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            const sessionId = this.getAttribute('data-session-id');
+            fetchTranscript(sessionId);
 
-
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.session-link').forEach(function(link) {
-            link.addEventListener('click', function(event) {
-                event.preventDefault();
-                const sessionId = this.getAttribute('data-session-id');
-                fetchTranscript(sessionId);
-
-               
-
-            
-       
-            });
+            // Fetch tags for the selected session
+            var tagsArray = <?php echo json_encode($tagsArray); ?>;
+            fetchReportTags(sessionId, tagsArray);
         });
     });
+});
+
+function fetchReportTags(sessionId, tagsArray) {
+    fetch('<?php echo plugin_dir_url(__FILE__); ?>fetch-report-tags.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            sessionId: sessionId,
+            tagsArray: tagsArray
+        }),
+    })
+    .then(response => response.json())
+    .then(reportTags => {
+        console.log(reportTags); // Output the fetched report tags
+
+        // Display the report tags
+        const reportTagsList = document.getElementById('reportTagsList');
+        reportTagsList.innerHTML = ''; // Clear previous tags
+        reportTags.forEach(tag => {
+            const spanItem = document.createElement('span');
+            spanItem.textContent = tag;
+            spanItem.className = 'tag';
+            reportTagsList.appendChild(spanItem);
+        });
+    });
+}
 
     
 
     function fetchTranscript(sessionId) {
+        
         const apiEndpoint = '<?php echo "https://api.voiceflow.com/v2/transcripts/{$project_id}/"; ?>' + sessionId;
         fetch(apiEndpoint, {
             headers: {
@@ -211,6 +285,7 @@ function voiceflow_transcripts_page() {
 
 
     <?php
+    
 
 }
 ?>
